@@ -54,11 +54,14 @@ class Encoder
 
     public function deserializeResponse($responseBody, $headers)
     {
-        if (!array_key_exists('Content-Type', $headers)) {
+        if (array_key_exists('Content-Type', $headers)) {
+            $contentType = $headers['Content-Type'];
+        } elseif (array_key_exists('content-type', $headers)) {
+            $contentType = $headers['content-type'];
+        } else {
             throw new \Exception("HTTP response does not have Content-Type header set");
         }
 
-        $contentType = $headers['Content-Type'];
         /** @var Serializer $serializer */
         $serializer = $this->serializer($contentType);
 
@@ -66,7 +69,10 @@ class Encoder
             throw new \Exception(sprintf("Unable to deserialize response with Content-Type: %s. Supported encodings are: %s", $contentType, implode(", ", $this->supportedEncodings())));
         }
 
-        if (array_key_exists("Content-Encoding", $headers) && $headers["Content-Encoding"] === "gzip") {
+        if (
+            (array_key_exists("Content-Encoding", $headers) && $headers["Content-Encoding"] === "gzip") ||
+            (array_key_exists("content-encoding", $headers) && $headers["content-encoding"] === "gzip")
+        ) {
             $responseBody = gzdecode($responseBody);
         }
 
